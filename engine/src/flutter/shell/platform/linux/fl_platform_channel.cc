@@ -14,6 +14,7 @@ static constexpr char kBadArgumentsError[] = "Bad Arguments";
 static constexpr char kGetClipboardDataMethod[] = "Clipboard.getData";
 static constexpr char kSetClipboardDataMethod[] = "Clipboard.setData";
 static constexpr char kClipboardHasStringsMethod[] = "Clipboard.hasStrings";
+static constexpr char kSetSelectionDataMethod[] = "Clipboard.setSelectionData";
 static constexpr char kExitApplicationMethod[] = "System.exitApplication";
 static constexpr char kRequestAppExitMethod[] = "System.requestAppExit";
 static constexpr char kInitializationCompleteMethod[] =
@@ -81,6 +82,28 @@ static FlMethodResponse* clipboard_get_data(FlPlatformChannel* self,
 static FlMethodResponse* clipboard_has_strings(FlPlatformChannel* self,
                                                FlMethodCall* method_call) {
   return self->vtable->clipboard_has_strings(method_call, self->user_data);
+}
+
+static FlMethodResponse* clipboard_set_selection_data(
+    FlPlatformChannel* self,
+    FlMethodCall* method_call) {
+  FlValue* args = fl_method_call_get_args(method_call);
+
+  if (fl_value_get_type(args) != FL_VALUE_TYPE_MAP) {
+    return FL_METHOD_RESPONSE(fl_method_error_response_new(
+        kBadArgumentsError, "Argument map missing or malformed", nullptr));
+  }
+
+  FlValue* text_value = fl_value_lookup_string(args, kTextKey);
+  if (text_value == nullptr ||
+      fl_value_get_type(text_value) != FL_VALUE_TYPE_STRING) {
+    return FL_METHOD_RESPONSE(fl_method_error_response_new(
+        kBadArgumentsError, "Missing selection text", nullptr));
+  }
+  const gchar* text = fl_value_get_string(text_value);
+
+  return self->vtable->clipboard_set_selection_data(method_call, text,
+                                                     self->user_data);
 }
 
 // Get the exit response from a System.requestAppExit method call.
@@ -185,6 +208,8 @@ static void method_call_cb(FlMethodChannel* channel,
     response = clipboard_get_data(self, method_call);
   } else if (strcmp(method, kClipboardHasStringsMethod) == 0) {
     response = clipboard_has_strings(self, method_call);
+  } else if (strcmp(method, kSetSelectionDataMethod) == 0) {
+    response = clipboard_set_selection_data(self, method_call);
   } else if (strcmp(method, kExitApplicationMethod) == 0) {
     response = system_exit_application(self, method_call);
   } else if (strcmp(method, kInitializationCompleteMethod) == 0) {

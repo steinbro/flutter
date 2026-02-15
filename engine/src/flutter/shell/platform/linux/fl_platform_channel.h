@@ -42,6 +42,9 @@ typedef struct {
                                           gpointer user_data);
   FlMethodResponse* (*clipboard_has_strings)(FlMethodCall* method_call,
                                              gpointer user_data);
+  FlMethodResponse* (*clipboard_set_selection_data)(FlMethodCall* method_call,
+                                                    const gchar* text,
+                                                    gpointer user_data);
   FlMethodResponse* (*system_exit_application)(FlMethodCall* method_call,
                                                FlPlatformChannelExitType type,
                                                gpointer user_data);

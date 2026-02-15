@@ -4331,6 +4331,15 @@ class EditableTextState extends State<EditableText>
 
     widget.controller.selection = selection;
 
+    // Update PRIMARY clipboard on Linux when text is selected.
+    // This enables middle-click paste with the selected text.
+    if (defaultTargetPlatform == TargetPlatform.linux && !selection.isCollapsed) {
+      final String selectedText = selection.textInside(text);
+      if (selectedText.isNotEmpty) {
+        Clipboard.setSelectionData(ClipboardData(text: selectedText));
+      }
+    }
+
     // This will show the keyboard for all selection changes on the
     // EditableText except for those triggered by a keyboard input.
     // Typically EditableText shouldn't take user keyboard input if

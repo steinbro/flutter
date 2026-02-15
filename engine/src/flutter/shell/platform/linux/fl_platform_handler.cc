@@ -62,6 +62,17 @@ static FlMethodResponse* clipboard_set_data(FlMethodCall* method_call,
   return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
 }
 
+// Called when Flutter wants to set the PRIMARY selection (Linux-specific).
+static FlMethodResponse* clipboard_set_selection_data(FlMethodCall* method_call,
+                                                      const gchar* text,
+                                                      gpointer user_data) {
+  GtkClipboard* clipboard =
+      gtk_clipboard_get(gdk_display_get_default(), GDK_SELECTION_PRIMARY);
+  gtk_clipboard_set_text(clipboard, text, -1);
+
+  return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+}
+
 // Called when Flutter wants to paste from the clipboard.
 static FlMethodResponse* clipboard_get_data(FlMethodCall* method_call,
                                             const gchar* format,
@@ -245,6 +256,7 @@ static FlPlatformChannelVTable platform_channel_vtable = {
     .clipboard_set_data = clipboard_set_data,
     .clipboard_get_data = clipboard_get_data,
     .clipboard_has_strings = clipboard_has_strings,
+    .clipboard_set_selection_data = clipboard_set_selection_data,
     .system_exit_application = system_exit_application,
     .system_initialization_complete = system_initialization_complete,
     .system_sound_play = system_sound_play,
