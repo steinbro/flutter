@@ -6534,6 +6534,52 @@ void main() {
     final clipboardData = mockClipboard.clipboardData as Map<String, dynamic>;
     expect(clipboardData['text'], 'Hello my name is Dash.');
   });
+
+  testWidgets('SelectableRegion updates PRIMARY clipboard on Linux when text is selected', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SelectableRegion(
+          selectionControls: materialTextSelectionControls,
+          child: const Text('Hello world'),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final RenderParagraph paragraph = tester.renderObject<RenderParagraph>(
+      find.descendant(of: find.text('Hello world'), matching: find.byType(RichText)),
+    );
+
+    // Select text by dragging.
+    final TestGesture gesture = await tester.startGesture(
+      textOffsetToPosition(paragraph, 0),
+      kind: PointerDeviceKind.mouse,
+    );
+    addTearDown(gesture.removePointer);
+    await tester.pump();
+    await gesture.moveTo(textOffsetToPosition(paragraph, 5));
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    // Verify selection was made.
+    expect(paragraph.selections.length, 1);
+    expect(paragraph.selections[0].start, 0);
+    expect(paragraph.selections[0].end, 5);
+
+    // Verify PRIMARY clipboard was updated on Linux.
+    if (defaultTargetPlatform == TargetPlatform.linux) {
+      expect(mockClipboard.selectionData, <String, dynamic>{'text': 'Hello'});
+    }
+
+    // Clear selection.
+    await tester.tapAt(textOffsetToPosition(paragraph, 8));
+    await tester.pumpAndSettle();
+
+    // Verify selection was cleared.
+    expect(paragraph.selections.isEmpty, true);
+  }, variant: TargetPlatformVariant.all());
 }
 
 class ColumnSelectionContainerDelegate extends StaticSelectionContainerDelegate {
