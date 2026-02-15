@@ -2578,6 +2578,11 @@ class EditableTextState extends State<EditableText>
   /// The list of native text processing actions provided by the engine.
   final List<ProcessTextAction> _processTextActions = <ProcessTextAction>[];
 
+  /// The last selected text that was sent to the PRIMARY clipboard (Linux only).
+  /// Used to avoid unnecessary clipboard updates when selection changes but
+  /// the selected text remains the same.
+  String? _lastPrimaryClipboardSelection;
+
   /// Whether to create an input connection with the platform for text editing
   /// or not.
   ///
@@ -4335,9 +4340,13 @@ class EditableTextState extends State<EditableText>
     // This enables middle-click paste with the selected text.
     if (defaultTargetPlatform == TargetPlatform.linux && !selection.isCollapsed) {
       final String selectedText = selection.textInside(text);
-      if (selectedText.isNotEmpty) {
+      if (selectedText.isNotEmpty && selectedText != _lastPrimaryClipboardSelection) {
+        _lastPrimaryClipboardSelection = selectedText;
         Clipboard.setSelectionData(ClipboardData(text: selectedText));
       }
+    } else if (selection.isCollapsed) {
+      // Clear the cached selection when the selection is collapsed
+      _lastPrimaryClipboardSelection = null;
     }
 
     // This will show the keyboard for all selection changes on the
