@@ -434,6 +434,11 @@ class SelectableRegionState extends State<SelectableRegion>
   /// The list of native text processing actions provided by the engine.
   final List<ProcessTextAction> _processTextActions = <ProcessTextAction>[];
 
+  /// The last selected text that was sent to the PRIMARY clipboard (Linux only).
+  /// Used to avoid unnecessary clipboard updates when selection changes but
+  /// the selected text remains the same.
+  String? _lastPrimaryClipboardSelection;
+
   // The focus node to use if the widget didn't supply one.
   FocusNode? _localFocusNode;
   FocusNode get _focusNode =>
@@ -987,13 +992,26 @@ class SelectableRegionState extends State<SelectableRegion>
   }
 
   void _updateSelectedContentIfNeeded() {
-    if (widget.onSelectionChanged == null) {
+    if (widget.onSelectionChanged == null && defaultTargetPlatform != TargetPlatform.linux) {
       return;
     }
     final SelectedContent? content = _selectable?.getSelectedContent();
     if (_lastSelectedContent?.plainText != content?.plainText) {
       _lastSelectedContent = content;
-      widget.onSelectionChanged!.call(_lastSelectedContent);
+      widget.onSelectionChanged?.call(_lastSelectedContent);
+      
+      // Update PRIMARY clipboard on Linux when text is selected.
+      // This enables middle-click paste with the selected text.
+      if (defaultTargetPlatform == TargetPlatform.linux) {
+        final String? selectedText = content?.plainText;
+        if (selectedText != null && selectedText.isNotEmpty && selectedText != _lastPrimaryClipboardSelection) {
+          _lastPrimaryClipboardSelection = selectedText;
+          Clipboard.setSelectionData(ClipboardData(text: selectedText));
+        } else if (selectedText == null || selectedText.isEmpty) {
+          // Clear the cached selection when the selection is cleared
+          _lastPrimaryClipboardSelection = null;
+        }
+      }
     }
   }
 

@@ -38,6 +38,18 @@ abstract final class Clipboard {
     });
   }
 
+  /// Stores the given selection data on the system's PRIMARY selection (Linux only).
+  ///
+  /// On Linux, this updates the PRIMARY selection which is used for middle-click paste.
+  /// On other platforms, this is a no-op.
+  ///
+  /// This is typically called automatically when text is selected, not when it's copied.
+  static Future<void> setSelectionData(ClipboardData data) async {
+    await SystemChannels.platform.invokeMethod<void>('Clipboard.setSelectionData', <String, dynamic>{
+      'text': data.text,
+    });
+  }
+
   /// Retrieves data from the clipboard that matches the given format.
   ///
   /// The `format` argument specifies the media type, such as `text/plain`, of

@@ -9,6 +9,38 @@
 
 #include "gtest/gtest.h"
 
+TEST(FlPlatformChannelTest, ClipboardSetSelectionData) {
+  g_autoptr(FlMockBinaryMessenger) messenger = fl_mock_binary_messenger_new();
+  
+  gchar* received_text = nullptr;
+  FlPlatformChannelVTable vtable = {
+      .clipboard_set_selection_data =
+          [](FlMethodCall* method_call, const gchar* text,
+             gpointer user_data) -> FlMethodResponse* {
+        gchar** received_text_ptr = static_cast<gchar**>(user_data);
+        *received_text_ptr = g_strdup(text);
+        return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+      },
+  };
+
+  g_autoptr(FlPlatformChannel) channel = fl_platform_channel_new(
+      FL_BINARY_MESSENGER(messenger), &vtable, &received_text);
+
+  g_autoptr(FlValue) args = fl_value_new_map();
+  fl_value_set_string_take(args, "text",
+                           fl_value_new_string("Selected text"));
+
+  g_autoptr(FlMethodResponse) response = fl_mock_binary_messenger_invoke_json_method(
+      messenger, "flutter/platform", "Clipboard.setSelectionData", args,
+      nullptr);
+
+  EXPECT_NE(response, nullptr);
+  EXPECT_TRUE(FL_IS_METHOD_SUCCESS_RESPONSE(response));
+  EXPECT_STREQ(received_text, "Selected text");
+
+  g_free(received_text);
+}
+
 TEST(FlPlatformChannelTest, ExitResponse) {
   g_autoptr(GMainLoop) loop = g_main_loop_new(nullptr, 0);
 

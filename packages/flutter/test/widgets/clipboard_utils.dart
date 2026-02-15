@@ -10,6 +10,7 @@ class MockClipboard {
   final bool hasStringsThrows;
 
   dynamic clipboardData = <String, dynamic>{'text': null};
+  dynamic selectionData = <String, dynamic>{'text': null};
 
   Future<Object?> handleMethodCall(MethodCall methodCall) async {
     switch (methodCall.method) {
@@ -24,6 +25,10 @@ class MockClipboard {
         return <String, bool>{'value': text != null && text.isNotEmpty};
       case 'Clipboard.setData':
         clipboardData = methodCall.arguments;
+        return null;
+      case 'Clipboard.setSelectionData':
+        selectionData = methodCall.arguments;
+        return null;
     }
     return null;
   }

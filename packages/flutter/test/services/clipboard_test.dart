@@ -48,4 +48,10 @@ void main() {
 
     expect(mockClipboard.clipboardData, <String, dynamic>{'text': 'Hello world'});
   });
+
+  test('Clipboard.setSelectionData sets selection text', () async {
+    await Clipboard.setSelectionData(const ClipboardData(text: 'Selected text'));
+
+    expect(mockClipboard.selectionData, <String, dynamic>{'text': 'Selected text'});
+  });
 }
